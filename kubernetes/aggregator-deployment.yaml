@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aggregator
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: aggregator
+  template:
+    metadata:
+      labels:
+        app: aggregator
+    spec:
+      containers:
+      - name: aggregator
+        image: your-registry/aggregator:latest
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - configMapRef:
+            name: complaint-analysis-config
+        - secretRef:
+            name: complaint-analysis-secrets
+        volumeMounts:
+        - name: google-cloud-key
+          mountPath: /var/secrets/google
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/google/key.json
+      volumes:
+      - name: google-cloud-key
+        secret:
+          secretName: complaint-analysis-secrets
+          items:
+          - key: GOOGLE_APPLICATION_CREDENTIALS
+            path: key.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aggregator-service
+spec:
+  selector:
+    app: aggregator
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
