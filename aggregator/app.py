@@ -22,14 +22,19 @@ from datetime import datetime
 
 # Import agents
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../agents')))
+agents_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'agents'))
+sys.path.append(agents_dir)
+
+# Now import the agent modules
 from text_agent import process_text_complaint
 from voice_agent import process_voice_complaint
 from image_agent import process_image_complaint
 from video_agent import process_video_complaint
-
 app = Flask(__name__)
 CORS(app)
+
+celery = Celery(app.name, broker='redis://redis:6379/0')
+celery.conf.update(app.config)
 
 # Distributed tracing
 middleware = FlaskMiddleware(
